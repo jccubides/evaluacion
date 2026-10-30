@@ -1,0 +1,31 @@
+name: ZAP Path Traversal
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  zap:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Crear la carpeta de perfiles del ejercicio
+        run: |
+          sudo mkdir -p /users/cwe/profiles
+          printf "Nombre: Juan Carlos\nCargo: Lider de TI\n" | sudo tee /users/cwe/profiles/juank
+
+      - name: Iniciar la pagina web en Perl
+        run: |
+          nohup perl servidor.pl > servidor.log 2>&1 &
+          sleep 3
+          curl -s "http://localhost:8080/perfil?user=juank"
+
+      - name: Escanear con OWASP ZAP
+        uses: zaproxy/action-full-scan@v0.13.0
+        with:
+          target: 'http://localhost:8080/'
+          cmd_options: '-m 1'
